@@ -5,22 +5,42 @@ import { Repository } from 'typeorm';
 import { Example } from '../../entities/example.entity';
 import { CreateExampleDto } from './dto/create-example.dto';
 import { UpdateExampleDto } from './dto/update-example.dto';
+import { ExampleFilterDto } from './dto/filter-example.dto';
+import { ExampleFilter } from './exmaple.filter';
+import { applySorting } from '../../utils/helper/filter';
+import { paginate } from '../../utils/helper/paginate';
+import { ExampleResponseDto } from './dto/response-example.dto';
+import { DtoTransformer } from '../../utils/helper/transformer';
 
 @Injectable()
 export class ExampleService {
   constructor(
     @InjectRepository(Example)
     private readonly exampleRepository: Repository<Example>,
+    private readonly exampleFilter: ExampleFilter,
   ) {}
 
-  create(createExampleDto: CreateExampleDto): Promise<Example> {
+  async create(createExampleDto: CreateExampleDto): Promise<Example> {
     const example = this.exampleRepository.create(createExampleDto);
 
     return this.exampleRepository.save(example);
   }
 
-  findAll(): Promise<Example[]> {
-    return this.exampleRepository.find();
+  async findAll(filter: ExampleFilterDto): Promise<any> {
+    const qb = this.exampleRepository.createQueryBuilder('example');
+
+    this.exampleFilter.apply(qb, filter);
+
+    const [data, total] = await qb
+      .skip((filter.page - 1) * filter.limit)
+      .take(filter.limit)
+      .getManyAndCount();
+
+    const paginated = await paginate(data, total, filter.page, filter.limit);
+
+    console.log('Paginated Result:', paginated); // Debugging line
+
+    return DtoTransformer.paginated(ExampleResponseDto, paginated);
   }
 
   async findOne(id: string): Promise<Example> {

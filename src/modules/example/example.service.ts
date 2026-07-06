@@ -38,8 +38,6 @@ export class ExampleService {
 
     const paginated = await paginate(data, total, filter.page, filter.limit);
 
-    console.log('Paginated Result:', paginated); // Debugging line
-
     return DtoTransformer.paginated(ExampleResponseDto, paginated);
   }
 

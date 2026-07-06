@@ -1,3 +1,4 @@
+import { PartialType } from '@nestjs/mapped-types';
 import { CreateExampleDto } from './create-example.dto';
 
-export class UpdateExampleDto implements Partial<CreateExampleDto> {}
+export class UpdateExampleDto extends PartialType(CreateExampleDto) {}

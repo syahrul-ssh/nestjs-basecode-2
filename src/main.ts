@@ -1,12 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { ResponseInterceptor } from './utils/interceptor/response.interceptor';
 import { GlobalExceptionFilter } from './utils/all-exception.filter';
 import { validationExceptionFactory } from './utils/factory/validation-exception.factory';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useLogger(app.get(Logger));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -21,6 +23,8 @@ async function bootstrap() {
   app.useGlobalFilters(
     new GlobalExceptionFilter(),
   );
+
+  app.setGlobalPrefix('api');
 
   await app.listen(process.env.PORT ?? 3000);
 }

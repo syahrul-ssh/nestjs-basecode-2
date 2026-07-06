@@ -6,6 +6,7 @@ import databaseConfig from './config/database.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { getTypeOrmConfig } from './config/typeorm.config';
 import { validateEnv } from './config/env.validation';
+import { ExampleModule } from './modules/example/example.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { validateEnv } from './config/env.validation';
       inject: [ConfigService],
       useFactory: getTypeOrmConfig,
     }),
+    ExampleModule,
   ],
   controllers: [AppController],
   providers: [AppService],

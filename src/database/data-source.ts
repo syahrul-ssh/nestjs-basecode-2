@@ -1,11 +1,10 @@
 import { DataSource } from 'typeorm';
-import { ConfigModule } from '@nestjs/config';
 import { config } from 'dotenv';
 
-config()
+config();
 
 export default new DataSource({
-  type: 'postgres', 
+  type: 'postgres',
   host: process.env.DATABASE_HOST,
   port: Number(process.env.DATABASE_PORT),
   username: process.env.DATABASE_USER,

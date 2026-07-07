@@ -50,7 +50,6 @@ export class ExampleController {
   }
 
   @Delete(':id')
-  @UseInterceptors(ResponseInterceptor)
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string) {
     return this.exampleService.remove(id);

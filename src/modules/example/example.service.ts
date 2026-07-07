@@ -7,7 +7,6 @@ import { CreateExampleDto } from './dto/create-example.dto';
 import { UpdateExampleDto } from './dto/update-example.dto';
 import { ExampleFilterDto } from './dto/filter-example.dto';
 import { ExampleFilter } from './exmaple.filter';
-import { applySorting } from '../../utils/helper/filter';
 import { paginate } from '../../utils/helper/paginate';
 import { ExampleResponseDto } from './dto/response-example.dto';
 import { DtoTransformer } from '../../utils/helper/transformer';
@@ -20,13 +19,15 @@ export class ExampleService {
     private readonly exampleFilter: ExampleFilter,
   ) {}
 
-  async create(createExampleDto: CreateExampleDto): Promise<Example> {
+  async create(createExampleDto: CreateExampleDto): Promise<ExampleResponseDto> {
     const example = this.exampleRepository.create(createExampleDto);
 
-    return this.exampleRepository.save(example);
+    const savedExample = await this.exampleRepository.save(example);
+
+    return DtoTransformer.item(ExampleResponseDto, savedExample);
   }
 
-  async findAll(filter: ExampleFilterDto): Promise<any> {
+  async findAll(filter: ExampleFilterDto): Promise<{ data: ExampleResponseDto[]; meta: any }> {
     const qb = this.exampleRepository.createQueryBuilder('example');
 
     this.exampleFilter.apply(qb, filter);
@@ -41,27 +42,28 @@ export class ExampleService {
     return DtoTransformer.paginated(ExampleResponseDto, paginated);
   }
 
-  async findOne(id: string): Promise<Example> {
+  async findOne(id: string): Promise<ExampleResponseDto> {
     const example = await this.exampleRepository.findOne({ where: { id } });
 
     if (!example) {
       throw new NotFoundException(`Example with id "${id}" not found`);
     }
 
-    return example;
+    return DtoTransformer.item(ExampleResponseDto, example);
   }
 
   async update(
     id: string,
     updateExampleDto: UpdateExampleDto,
-  ): Promise<Example> {
+  ): Promise<ExampleResponseDto> {
     const example = await this.findOne(id);
     const updatedExample = this.exampleRepository.merge(
       example,
       updateExampleDto,
     );
 
-    return this.exampleRepository.save(updatedExample);
+    const savedExample = await this.exampleRepository.save(updatedExample);
+    return DtoTransformer.item(ExampleResponseDto, savedExample);
   }
 
   async remove(id: string): Promise<void> {

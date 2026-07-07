@@ -1,98 +1,229 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# NestJS Basecode 2
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS starter API with PostgreSQL, TypeORM, request validation, structured logging, response interceptors, pagination helpers, and an example CRUD module.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech Stack
 
-## Description
+- NestJS 11
+- TypeScript
+- PostgreSQL
+- TypeORM
+- class-validator and class-transformer
+- nestjs-pino / Pino logger
+- Jest
+- Docker
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Project Structure
 
-## Project setup
-
-```bash
-$ npm install
+```text
+src/
+  config/              Environment, database, and TypeORM config
+  database/            TypeORM data source and migrations
+  entities/            TypeORM entities
+  modules/example/     Example CRUD module
+  utils/               Shared filters, interceptors, helpers, and base DTOs
 ```
 
-## Compile and run the project
+## Requirements
 
-```bash
-# development
-$ npm run start
+- Node.js 22 or newer
+- npm
+- PostgreSQL
+- Docker, optional
 
-# watch mode
-$ npm run start:dev
+## Environment Variables
 
-# production mode
-$ npm run start:prod
+Create a `.env` file in the project root:
+
+```env
+APP_NAME=nestjs-basecode-2
+PORT=3000
+
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_NAME=nestjs_basecode_2
 ```
 
-## Run tests
+The app validates these values on startup and will fail fast if any required value is missing or if `PORT` / `DATABASE_PORT` is invalid.
+
+## Installation
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
 ```
 
-## Deployment
+## Database Setup
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Make sure PostgreSQL is running and create the database configured in `.env`.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Example with `psql`:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+createdb nestjs_basecode_2
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Run migrations after building the project:
 
-## Resources
+```bash
+npm run build
+npm run migration:run
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+To revert the latest migration:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+npm run migration:revert
+```
 
-## Support
+To create a new migration:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npm run migration:create --name=your-migration-name
+```
 
-## Stay in touch
+TypeORM synchronization is disabled, so schema changes should be handled through migrations.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Running the App
 
-## License
+Development:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+npm run start:dev
+```
+
+Production build:
+
+```bash
+npm run build
+npm run start:prod
+```
+
+The API uses the global prefix `/api`. With the default port, the base URL is:
+
+```text
+http://localhost:3000/api
+```
+
+## Docker
+
+Build and run the app container:
+
+```bash
+docker compose up --build
+```
+
+The compose file reads environment variables from `.env` and exposes `${PORT:-3000}:3000`.
+
+Note: the included `docker-compose.yml` runs only the application container. Use an external PostgreSQL instance or extend the compose file with a database service.
+
+## API Usage
+
+Health/root endpoint:
+
+```bash
+curl http://localhost:3000/api
+```
+
+Create an example:
+
+```bash
+curl -X POST http://localhost:3000/api/examples \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Example item","status":"active"}'
+```
+
+List examples:
+
+```bash
+curl "http://localhost:3000/api/examples?page=1&limit=10&status=active&sort=createdAt:DESC"
+```
+
+Get one example:
+
+```bash
+curl http://localhost:3000/api/examples/{id}
+```
+
+Update an example:
+
+```bash
+curl -X PATCH http://localhost:3000/api/examples/{id} \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Updated item","status":"inactive"}'
+```
+
+Delete an example:
+
+```bash
+curl -X DELETE http://localhost:3000/api/examples/{id}
+```
+
+Supported example statuses:
+
+- `active`
+- `inactive`
+
+List query parameters:
+
+- `page`: page number, defaults to `1`
+- `limit`: page size, defaults to `10`
+- `status`: filter by `active` or `inactive`
+- `sort`: comma-separated field sorting, for example `createdAt:DESC,name:ASC`
+
+## Response Format
+
+Single-resource responses are wrapped like this:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "name": "Example item",
+    "status": "active",
+    "createdAt": "2026-07-07T00:00:00.000Z",
+    "updatedAt": "2026-07-07T00:00:00.000Z"
+  }
+}
+```
+
+Paginated responses are wrapped like this:
+
+```json
+{
+  "success": true,
+  "meta": {
+    "total": 1,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 1
+  },
+  "data": []
+}
+```
+
+## Scripts
+
+```bash
+npm run build          # Compile TypeScript
+npm run start          # Start the app
+npm run start:dev      # Start with watch mode
+npm run start:debug    # Start with debug mode and watch mode
+npm run start:prod     # Run compiled app from dist
+npm run lint           # Run ESLint with auto-fix
+npm run format         # Format source and test files
+npm run test           # Run unit tests
+npm run test:watch     # Run unit tests in watch mode
+npm run test:cov       # Run tests with coverage
+npm run test:e2e       # Run end-to-end tests
+```
+
+## Development Notes
+
+- Request validation is enabled globally with whitelisting and implicit type conversion.
+- Unknown request body fields are rejected with `forbidNonWhitelisted`.
+- Global exceptions are normalized by `GlobalExceptionFilter`.
+- Logs use Pino, with pretty logs outside production.
+- Deleted examples use TypeORM soft delete via `deleted_at`.

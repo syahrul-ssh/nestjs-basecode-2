@@ -18,13 +18,14 @@ import { ExampleService } from './example.service';
 import { ExampleFilterDto } from './dto/filter-example.dto';
 import { PaginatedResponseInterceptor } from '../../utils/interceptor/paginated-response.interceptor';
 import { ResponseInterceptor } from '../../utils/interceptor/response.interceptor';
+import { TransactionInterceptor } from '../../utils/interceptor/transaction.interceptor';
 
 @Controller('examples')
 export class ExampleController {
   constructor(private readonly exampleService: ExampleService) {}
 
   @Post()
-  @UseInterceptors(ResponseInterceptor)
+  @UseInterceptors(TransactionInterceptor, ResponseInterceptor)
   create(@Body() createExampleDto: CreateExampleDto) {
     return this.exampleService.create(createExampleDto);
   }
@@ -44,7 +45,7 @@ export class ExampleController {
   }
 
   @Patch(':id')
-  @UseInterceptors(ResponseInterceptor)
+  @UseInterceptors(TransactionInterceptor,ResponseInterceptor)
   update(@Param('id') id: string, @Body() updateExampleDto: UpdateExampleDto) {
     return this.exampleService.update(id, updateExampleDto);
   }

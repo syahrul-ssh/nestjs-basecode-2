@@ -1,41 +1,25 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, NotFoundException, Scope } from '@nestjs/common';
 
-import { Example } from '../../entities/example.entity';
 import { CreateExampleDto } from './dto/create-example.dto';
 import { UpdateExampleDto } from './dto/update-example.dto';
 import { ExampleFilterDto } from './dto/filter-example.dto';
-import { ExampleFilter } from './exmaple.filter';
 import { paginate } from '../../utils/helper/paginate';
 import { ExampleResponseDto } from './dto/response-example.dto';
 import { DtoTransformer } from '../../utils/helper/transformer';
+import { ExamplesRepository } from './example.repository';
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class ExampleService {
-  constructor(
-    @InjectRepository(Example)
-    private readonly exampleRepository: Repository<Example>,
-    private readonly exampleFilter: ExampleFilter,
-  ) {}
+  constructor(private readonly exampleRepository: ExamplesRepository) {}
 
   async create(createExampleDto: CreateExampleDto): Promise<ExampleResponseDto> {
-    const example = this.exampleRepository.create(createExampleDto);
-
-    const savedExample = await this.exampleRepository.save(example);
+    const savedExample = await this.exampleRepository.create(createExampleDto);
 
     return DtoTransformer.item(ExampleResponseDto, savedExample);
   }
 
   async findAll(filter: ExampleFilterDto): Promise<{ data: ExampleResponseDto[]; meta: any }> {
-    const qb = this.exampleRepository.createQueryBuilder('example');
-
-    this.exampleFilter.apply(qb, filter);
-
-    const [data, total] = await qb
-      .skip((filter.page - 1) * filter.limit)
-      .take(filter.limit)
-      .getManyAndCount();
+    const { data, total } = await this.exampleRepository.findAndCountAll(filter);
 
     const paginated = await paginate(data, total, filter.page, filter.limit);
 
@@ -43,7 +27,7 @@ export class ExampleService {
   }
 
   async findOne(id: string): Promise<ExampleResponseDto> {
-    const example = await this.exampleRepository.findOne({ where: { id } });
+    const example = await this.exampleRepository.findOneById(id);
 
     if (!example) {
       throw new NotFoundException(`Example with id "${id}" not found`);
@@ -56,18 +40,19 @@ export class ExampleService {
     id: string,
     updateExampleDto: UpdateExampleDto,
   ): Promise<ExampleResponseDto> {
-    const example = await this.findOne(id);
-    const updatedExample = this.exampleRepository.merge(
-      example,
-      updateExampleDto,
-    );
+    await this.exampleRepository.update(id, updateExampleDto);
 
-    const savedExample = await this.exampleRepository.save(updatedExample);
+    const savedExample = await this.exampleRepository.findOneById(id);
+
+    if (!savedExample) {
+      throw new NotFoundException(`Example with id "${id}" not found`);
+    }
+
     return DtoTransformer.item(ExampleResponseDto, savedExample);
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.exampleRepository.softDelete(id);
+    const result = await this.exampleRepository.delete(id);
 
     if (!result.affected) {
       throw new NotFoundException(`Example with id "${id}" not found`);

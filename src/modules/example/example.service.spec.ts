@@ -1,25 +1,24 @@
 import { NotFoundException } from '@nestjs/common';
+import { ContextIdFactory } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 
 import { Example } from '../../entities/example.entity';
 import { ExampleService } from './example.service';
+import { ExamplesRepository } from './example.repository';
 
-type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
+type MockRepository = Partial<Record<keyof ExamplesRepository, jest.Mock>>;
 
-const createMockRepository = (): MockRepository<Example> => ({
+const createMockRepository = (): MockRepository => ({
   create: jest.fn(),
-  find: jest.fn(),
-  findOne: jest.fn(),
-  merge: jest.fn(),
-  save: jest.fn(),
-  softDelete: jest.fn(),
+  findAndCountAll: jest.fn(),
+  findOneById: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
 });
 
 describe('ExampleService', () => {
   let service: ExampleService;
-  let repository: MockRepository<Example>;
+  let repository: MockRepository;
 
   const example: Example = {
     id: '0ef96f94-cd07-4e88-81f5-c0fdf66ed87c',
@@ -35,47 +34,61 @@ describe('ExampleService', () => {
       providers: [
         ExampleService,
         {
-          provide: getRepositoryToken(Example),
+          provide: ExamplesRepository,
           useValue: createMockRepository(),
         },
       ],
     }).compile();
 
-    service = module.get<ExampleService>(ExampleService);
-    repository = module.get<MockRepository<Example>>(
-      getRepositoryToken(Example),
-    );
+    const contextId = ContextIdFactory.create();
+
+    service = await module.resolve<ExampleService>(ExampleService, contextId);
+    repository = await module.resolve<MockRepository>(ExamplesRepository, contextId);
   });
 
   it('creates an example', async () => {
     const dto = { name: 'Example name', status: 'active' };
 
-    repository.create?.mockReturnValue(example);
-    repository.save?.mockResolvedValue(example);
+    repository.create?.mockResolvedValue(example);
 
-    await expect(service.create(dto)).resolves.toEqual(example);
+    await expect(service.create(dto)).resolves.toEqual(
+      expect.objectContaining({
+        id: example.id,
+        name: example.name,
+        status: example.status,
+      }),
+    );
     expect(repository.create).toHaveBeenCalledWith(dto);
-    expect(repository.save).toHaveBeenCalledWith(example);
   });
 
   it('returns all examples', async () => {
-    repository.find?.mockResolvedValue([example]);
+    repository.findAndCountAll?.mockResolvedValue({ data: [example], total: 1 });
 
-    await expect(service.findAll()).resolves.toEqual([example]);
-    expect(repository.find).toHaveBeenCalledWith();
+    await expect(
+      service.findAll({ page: 1, limit: 10 } as any),
+    ).resolves.toEqual({
+      data: [expect.objectContaining({ id: example.id })],
+      meta: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
+    });
+    expect(repository.findAndCountAll).toHaveBeenCalledWith({ page: 1, limit: 10 });
   });
 
   it('returns one example by id', async () => {
-    repository.findOne?.mockResolvedValue(example);
+    repository.findOneById?.mockResolvedValue(example);
 
-    await expect(service.findOne(example.id)).resolves.toEqual(example);
-    expect(repository.findOne).toHaveBeenCalledWith({
-      where: { id: example.id },
-    });
+    await expect(service.findOne(example.id)).resolves.toEqual(
+      expect.objectContaining({ id: example.id }),
+    );
+    expect(repository.findOneById).toHaveBeenCalledWith(example.id);
   });
 
   it('throws when an example cannot be found', async () => {
-    repository.findOne?.mockResolvedValue(null);
+    repository.findOneById?.mockResolvedValue(null);
 
     await expect(service.findOne(example.id)).rejects.toBeInstanceOf(
       NotFoundException,
@@ -86,26 +99,24 @@ describe('ExampleService', () => {
     const dto = { status: 'inactive' };
     const updatedExample = { ...example, ...dto };
 
-    repository.findOne?.mockResolvedValue(example);
-    repository.merge?.mockReturnValue(updatedExample);
-    repository.save?.mockResolvedValue(updatedExample);
+    repository.update?.mockResolvedValue(updatedExample);
+    repository.findOneById?.mockResolvedValue(updatedExample);
 
     await expect(service.update(example.id, dto)).resolves.toEqual(
-      updatedExample,
+      expect.objectContaining({ id: updatedExample.id, status: dto.status }),
     );
-    expect(repository.merge).toHaveBeenCalledWith(example, dto);
-    expect(repository.save).toHaveBeenCalledWith(updatedExample);
+    expect(repository.update).toHaveBeenCalledWith(example.id, dto);
   });
 
   it('soft deletes an example', async () => {
-    repository.softDelete?.mockResolvedValue({ affected: 1 });
+    repository.delete?.mockResolvedValue({ affected: 1 });
 
     await expect(service.remove(example.id)).resolves.toBeUndefined();
-    expect(repository.softDelete).toHaveBeenCalledWith(example.id);
+    expect(repository.delete).toHaveBeenCalledWith(example.id);
   });
 
   it('throws when soft deleting a missing example', async () => {
-    repository.softDelete?.mockResolvedValue({ affected: 0 });
+    repository.delete?.mockResolvedValue({ affected: 0 });
 
     await expect(service.remove(example.id)).rejects.toBeInstanceOf(
       NotFoundException,
